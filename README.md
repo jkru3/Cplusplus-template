@@ -40,5 +40,9 @@ cmake --build .
 
 ### Run predictions
 ```bash
-./stock_analyzer --predict --input ./portfolios --output ./predictions
+./stock_analyzer --stocks ../data/test_stocks.csv --portfolio ../data/test_portfolio.json
 ```
+
+### Need help?
+```bash
+./stock_analyzer --help

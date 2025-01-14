@@ -1,64 +1,83 @@
 // src/main.cpp
-#include "data_processing/stock_processor.hpp"
-#include "data_processing/portfolio_generator.hpp"
+#include "common/types.hpp"
+#include "data_processing/csv_parser.hpp"
 #include "prediction/predictor.hpp"
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
+#include <fstream>
+#include <iostream>
+
+using json = nlohmann::json;
+
+// Helper function to load portfolio from JSON file
+stock_analyzer::Portfolio load_portfolio(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open portfolio file: " + filename);
+    }
+    
+    json j;
+    file >> j;
+    return j.get<stock_analyzer::Portfolio>();
+}
 
 int main(int argc, char** argv) {
     CLI::App app{"Stock Analysis Tool"};
 
-    // Command line parameters
-    std::string input_dir;
-    std::string output_dir;
-    int portfolio_count = 0;
-    bool process_stocks = false;
-    bool generate_portfolios = false;
-    bool run_prediction = false;
-
-    // Set up CLI options
-    app.add_flag("--process-stocks", process_stocks, "Process stock data");
-    app.add_flag("--generate-portfolios", generate_portfolios, "Generate portfolios");
-    app.add_flag("--predict", run_prediction, "Run prediction");
-    app.add_option("--input", input_dir, "Input directory")->required();
-    app.add_option("--output", output_dir, "Output directory")->required();
-    app.add_option("--portfolio-count", portfolio_count, "Number of portfolios to generate");
+    std::string stock_file;
+    std::string portfolio_file;
+    double max_investment = 0.0;
+    
+    app.add_option("--stocks", stock_file, "Stock data CSV file")->required();
+    app.add_option("--portfolio", portfolio_file, "Portfolio JSON file")->required();
+    app.add_option("--max-investment", max_investment, "Maximum investment amount (0 for current portfolio value)");
 
     CLI11_PARSE(app, argc, argv);
 
     try {
-        if (process_stocks) {
-            spdlog::info("Processing stock data...");
-            stock_analyzer::StockProcessor processor;
-            auto processed_data = processor.process_stocks(input_dir);
-            processor.save_processed_data(processed_data, output_dir + "/processed_stocks.json");
+        // Load stock data
+        spdlog::info("Loading stock data from {}", stock_file);
+        auto stock_data = stock_analyzer::CSVParser::parse_stock_data(stock_file);
+        spdlog::info("Loaded {} stocks", stock_data.size());
+        
+        // Load portfolio
+        spdlog::info("Loading portfolio from {}", portfolio_file);
+        auto portfolio = load_portfolio(portfolio_file);
+        
+        // Initialize predictor and get recommendations
+        stock_analyzer::Predictor predictor(stock_data);
+        auto recommendations = predictor.recommend_portfolio_adjustments(portfolio, max_investment);
+        
+        // Print results
+        std::cout << "\nPortfolio Recommendations:\n";
+        std::cout << "========================\n\n";
+        
+        // Print current portfolio value
+        double current_value = portfolio.cash;
+        std::cout << "Current Portfolio:\n";
+        std::cout << "  Cash: $" << std::fixed << std::setprecision(2) << portfolio.cash << "\n";
+        for (const auto& holding : portfolio.holdings) {
+            std::cout << "  " << holding.ticker << ": " << holding.quantity << " shares\n";
         }
-
-        if (generate_portfolios) {
-            spdlog::info("Generating portfolios...");
-            stock_analyzer::StockProcessor processor;
-            auto stock_data = processor.load_processed_data(input_dir + "/processed_stocks.json");
-            
-            std::vector<std::string> symbols;
-            for (const auto& stock : stock_data) {
-                symbols.push_back(stock.symbol);
+        std::cout << "\n";
+        
+        // Print recommendations
+        std::cout << "Recommended Actions:\n";
+        for (const auto& rec : recommendations) {
+            std::cout << rec.ticker << ":\n";
+            std::cout << "  Current Position: " << rec.current_quantity << " shares\n";
+            std::cout << "  Recommended Position: " << rec.recommended_quantity << " shares\n";
+            std::cout << "  Action: " << rec.action;
+            if (rec.action != "HOLD") {
+                int diff = std::abs(rec.recommended_quantity - rec.current_quantity);
+                std::cout << " " << diff << " shares";
             }
-            
-            stock_analyzer::PortfolioGenerator generator(symbols);
-            auto portfolios = generator.generate_portfolios(portfolio_count);
-            generator.save_portfolios(portfolios, output_dir + "/portfolios.json");
+            std::cout << "\n";
+            std::cout << "  Expected Return: " << std::fixed << std::setprecision(2) 
+                      << rec.predicted_return << "%\n\n";
         }
-
-        if (run_prediction) {
-            spdlog::info("Running predictions...");
-            stock_analyzer::StockProcessor processor;
-            auto stock_data = processor.load_processed_data(input_dir + "/processed_stocks.json");
-            
-            // Load portfolios and run predictions
-            // Implementation details...
-        }
-    }
-    catch (const std::exception& e) {
+        
+    } catch (const std::exception& e) {
         spdlog::error("Error: {}", e.what());
         return 1;
     }

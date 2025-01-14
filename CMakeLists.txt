@@ -29,15 +29,20 @@ find_package(CLI11 CONFIG REQUIRED)          # For command line parsing
 # Add source files
 set(SOURCES
     src/main.cpp
+    src/common/types.cpp
+    src/data_processing/csv_parser.cpp
     src/data_processing/stock_processor.cpp
     src/data_processing/portfolio_generator.cpp
     src/prediction/predictor.cpp
-    src/prediction/evaluator.cpp
-    src/common/types.cpp
 )
 
 # Create executable
 add_executable(stock_analyzer ${SOURCES})
+
+# Include directories
+target_include_directories(stock_analyzer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 # Link libraries
 target_link_libraries(stock_analyzer PRIVATE
@@ -47,7 +52,34 @@ target_link_libraries(stock_analyzer PRIVATE
     CLI11::CLI11
 )
 
-# Include directories
-target_include_directories(stock_analyzer PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# # Testing configuration
+# enable_testing()
+# include(FetchContent)
+
+# # Fetch Google Test
+# FetchContent_Declare(
+#     googletest
+#     GIT_REPOSITORY https://github.com/google/googletest.git
+#     GIT_TAG release-1.12.1
+# )
+# FetchContent_MakeAvailable(googletest)
+
+# # Add test executable
+# add_executable(test_predictor
+#     tests/test_predictor.cpp
+# )
+
+# target_include_directories(test_predictor PRIVATE
+#     ${CMAKE_CURRENT_SOURCE_DIR}/tests
+# )
+
+# target_link_libraries(test_predictor PRIVATE
+#     GTest::gtest
+#     GTest::gtest_main
+#     CLI11::CLI11
+#     spdlog::spdlog
+# )
+
+# # Register tests
+# include(GoogleTest)
+# gtest_discover_tests(test_predictor)

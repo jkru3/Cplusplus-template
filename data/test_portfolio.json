@@ -1,0 +1,15 @@
+{
+  "id": "test-1",
+  "date": "2020-01-08",
+  "cash": 5000,
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "quantity": 10
+    },
+    {
+      "ticker": "SBUX",
+      "quantity": 20
+    }
+  ]
+}
