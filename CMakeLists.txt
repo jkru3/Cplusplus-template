@@ -1,71 +1,53 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.15)
 
-if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+# Set vcpkg toolchain file
+if(DEFINED ENV{VCPKG_ROOT})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+else()
+    message(FATAL_ERROR "Please set VCPKG_ROOT environment variable to your vcpkg installation directory")
 endif()
 
-project(cpp_prototype_template VERSION 1.0.0 LANGUAGES CXX C)
+# Set the vcpkg triplet for Apple Silicon
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(VCPKG_TARGET_TRIPLET "arm64-osx")
+endif()
 
-# Set C++ standard
+project(stock_analyzer VERSION 1.0)
+
+# Specify C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_BUILD_TYPE Release)
 
-# Set vcpkg triplet
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/vcpkg/installed/arm64-osx")
-
-# Options
-option(BUILD_TESTS "Build test suite" ON)
-
-# Find dependencies through vcpkg
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
-find_package(GTest CONFIG REQUIRED)
+# Find required packages
+find_package(nlohmann_json CONFIG REQUIRED)  # For JSON processing
+find_package(fmt CONFIG REQUIRED)            # For string formatting
+find_package(spdlog CONFIG REQUIRED)         # For logging
+find_package(CLI11 CONFIG REQUIRED)          # For command line parsing
 
 # Add source files
 set(SOURCES
     src/main.cpp
-    src/data_processor.cpp
+    src/data_processing/stock_processor.cpp
+    src/data_processing/portfolio_generator.cpp
+    src/prediction/predictor.cpp
+    src/prediction/evaluator.cpp
+    src/common/types.cpp
 )
 
-# Add header files
-set(HEADERS
-    include/data_processor.hpp
-)
-
-# Add executable
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-# Include directories
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Create executable
+add_executable(stock_analyzer ${SOURCES})
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(stock_analyzer PRIVATE
     nlohmann_json::nlohmann_json
+    fmt::fmt
     spdlog::spdlog
+    CLI11::CLI11
 )
 
-# Tests
-if(BUILD_TESTS)
-    add_executable(${PROJECT_NAME}_tests
-        test_data_processor.cpp
-    )
-
-    target_link_libraries(${PROJECT_NAME}_tests PRIVATE
-        GTest::gtest
-        GTest::gtest_main
-        nlohmann_json::nlohmann_json
-        spdlog::spdlog
-    )
-
-    target_include_directories(${PROJECT_NAME}_tests PRIVATE
-        ${CMAKE_SOURCE_DIR}/include
-    )
-
-    add_test(NAME ${PROJECT_NAME}_tests COMMAND ${PROJECT_NAME}_tests)
-endif()
-
-# Install rules
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION bin
+# Include directories
+target_include_directories(stock_analyzer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
