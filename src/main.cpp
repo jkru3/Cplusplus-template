@@ -1,84 +1,122 @@
 // src/main.cpp
-#include "common/types.hpp"
 #include "data_processing/csv_parser.hpp"
-#include "prediction/predictor.hpp"
-#include <CLI/CLI.hpp>
-#include <spdlog/spdlog.h>
-#include <fstream>
+#include "data_processing/json_parser.hpp"
+#include "calculations/lookup.hpp"
+#include "calculations/projection.hpp"
+#include "calculations/eval.hpp"
+#include "calculations/strategies.hpp"
 #include <iostream>
+#include <memory>
+#include <chrono>
 
-using json = nlohmann::json;
+using namespace stock_analyzer;
 
-// Helper function to load portfolio from JSON file
-stock_analyzer::Portfolio load_portfolio(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open portfolio file: " + filename);
-    }
+std::string get_current_date() {
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    auto tm = std::localtime(&time);
     
-    json j;
-    file >> j;
-    return j.get<stock_analyzer::Portfolio>();
+    char buffer[11];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", tm);
+    return std::string(buffer);
 }
 
-int main(int argc, char** argv) {
-    CLI::App app{"Stock Analysis Tool"};
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " [lookup|project] <csv_file> [date] [period] [strategy]\n";
+        return 1;
+    }
 
-    std::string stock_file;
-    std::string portfolio_file;
-    double max_investment = 0.0;
-    
-    app.add_option("--stocks", stock_file, "Stock data CSV file")->required();
-    app.add_option("--portfolio", portfolio_file, "Portfolio JSON file")->required();
-    app.add_option("--max-investment", max_investment, "Maximum investment amount (0 for current portfolio value)");
-
-    CLI11_PARSE(app, argc, argv);
+    std::string command = argv[1];
+    std::string csv_file = argv[2];
+    std::string date = argc > 3 ? argv[3] : get_current_date();
 
     try {
-        // Load stock data
-        spdlog::info("Loading stock data from {}", stock_file);
-        auto stock_data = stock_analyzer::CSVParser::parse_stock_data(stock_file);
-        spdlog::info("Loaded {} stocks", stock_data.size());
-        
-        // Load portfolio
-        spdlog::info("Loading portfolio from {}", portfolio_file);
-        auto portfolio = load_portfolio(portfolio_file);
-        
-        // Initialize predictor and get recommendations
-        stock_analyzer::Predictor predictor(stock_data);
-        auto recommendations = predictor.recommend_portfolio_adjustments(portfolio, max_investment);
-        
-        // Print results
-        std::cout << "\nPortfolio Recommendations:\n";
-        std::cout << "========================\n\n";
-        
-        // Print current portfolio value
-        double current_value = portfolio.cash;
-        std::cout << "Current Portfolio:\n";
-        std::cout << "  Cash: $" << std::fixed << std::setprecision(2) << portfolio.cash << "\n";
-        for (const auto& holding : portfolio.holdings) {
-            std::cout << "  " << holding.ticker << ": " << holding.quantity << " shares\n";
-        }
-        std::cout << "\n";
-        
-        // Print recommendations
-        std::cout << "Recommended Actions:\n";
-        for (const auto& rec : recommendations) {
-            std::cout << rec.ticker << ":\n";
-            std::cout << "  Current Position: " << rec.current_quantity << " shares\n";
-            std::cout << "  Recommended Position: " << rec.recommended_quantity << " shares\n";
-            std::cout << "  Action: " << rec.action;
-            if (rec.action != "HOLD") {
-                int diff = std::abs(rec.recommended_quantity - rec.current_quantity);
-                std::cout << " " << diff << " shares";
+        auto stock_data = CSVParser::parse_stock_data(csv_file);
+
+        if (command == "lookup") {
+            std::cout << "\nStocks for " << date << ":\n";
+            std::cout << "Ticker | Sector             | Open     | High     | Low      | Close    | Volume\n";
+            std::cout << "--------------------------------------------------------------------------------\n";
+            auto results = StockLookup::lookup_stocks(stock_data, date);
+            for (const auto& stock : results) {
+                std::cout << StockEval::format_lookup_result(stock, date) << std::endl;
             }
             std::cout << "\n";
-            std::cout << "  Expected Return: " << std::fixed << std::setprecision(2) 
-                      << rec.predicted_return << "%\n\n";
         }
-        
-    } catch (const std::exception& e) {
-        spdlog::error("Error: {}", e.what());
+        else if (command == "project") {
+            int period = argc > 4 ? std::stoi(argv[4]) : 7;
+            std::string strategy_name = argc > 5 ? argv[5] : "default";
+
+            std::shared_ptr<ProjectionStrategy> strategy;
+            if (strategy_name == "random") {
+                strategy = std::make_shared<RandomStrategy>();
+            } else {
+                strategy = std::make_shared<DefaultStrategy>();
+            }
+
+            auto [results, summary] = StockProjection::project_stocks(stock_data, date, period, strategy);
+            
+            // Determine if we should include actual results
+            bool include_actual = false;
+            for (const auto& stock : stock_data) {
+                auto it = stock.daily_prices.find(date);
+                if (it != stock.daily_prices.end() && 
+                    std::next(it, period) != stock.daily_prices.end()) {
+                    include_actual = true;
+                    break;
+                }
+            }
+
+            // Print results
+            std::cout << "\nSpeculation for " << date << " " << period << " trading days ahead using " << strategy_name << " strategy:\n";
+            std::cout << StockEval::format_projection_header(include_actual);
+            for (const auto& result : results) {
+                std::cout << StockEval::format_projection_result(result, include_actual) << std::endl;
+            }
+            std::cout << "Total: | " << StockEval::format_projection_summary(summary, include_actual) << std::endl;
+            std::cout << "\n";
+        } else if (command == "rebalance" && argc > 3) {
+            // Parse portfolio file
+            std::string portfolio_file = argv[3];
+            Portfolio portfolio = JSONParser::parse_portfolio_json(portfolio_file);
+            
+            int period = argc > 4 ? std::stoi(argv[4]) : 5;
+            int max_holdings = argc > 5 ? std::stoi(argv[5]) : 3;
+            std::string strategy_name = argc > 6 ? argv[6] : "default";
+            
+            std::shared_ptr<ProjectionStrategy> strategy;
+            if (strategy_name == "random") {
+                strategy = std::make_shared<RandomStrategy>();
+            } else {
+                strategy = std::make_shared<DefaultStrategy>();
+            }
+            
+            auto actions = PortfolioRebalancer::rebalance_portfolio(
+                portfolio, stock_data, period, max_holdings, strategy);
+            
+            // Determine if we should include actual results
+            bool include_actual = false;
+            for (const auto& stock : stock_data) {
+                auto it = stock.daily_prices.find(portfolio.date);
+                if (it != stock.daily_prices.end() && 
+                    std::next(it, period) != stock.daily_prices.end()) {
+                    include_actual = true;
+                    break;
+                }
+            }
+            
+            // Print results
+            for (const auto& action : actions) {
+                std::cout << StockEval::format_rebalance_action(action, include_actual) << std::endl;
+            }
+        } else {
+            std::cerr << "Unknown command: " << command << std::endl;
+            return 1;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
 

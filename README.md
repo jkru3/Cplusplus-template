@@ -28,21 +28,22 @@ cmake --build .
 
 ## Usage
 
-### Process stock data
+### Lookup stocks for a specific date
 ```bash
-./stock_analyzer --process-stocks --input ./raw_data --output ./processed_data
+./stock_analyzer lookup ../data/sample_stock_data.csv 2020-01-02
 ```
 
-### Generate 100 portfolios
+### Project stocks with custom parameters
 ```bash
-./stock_analyzer --generate-portfolios --input ./processed_data --output ./portfolios --portfolio-count 100
+./stock_analyzer project ../data/sample_stock_data.csv 2020-01-02 7 random
 ```
 
-### Run predictions
+### Rebalance
 ```bash
-./stock_analyzer --stocks ../data/test_stocks.csv --portfolio ../data/test_portfolio.json
+./stock_analyzer rebalance ../data/sample_stock_data.csv ../data/portfolio.json 5 3 random
 ```
 
 ### Need help?
 ```bash
 ./stock_analyzer --help
+```

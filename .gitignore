@@ -45,3 +45,6 @@ cmake-build-*/
 
 # vcpkg
 vcpkg_installed/
+
+# LLM Prompts
+prompt*.md
