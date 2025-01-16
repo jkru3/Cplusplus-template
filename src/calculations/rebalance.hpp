@@ -17,7 +17,7 @@ public:
                        const std::vector<StockData>& stock_data,
                        int period,
                        int max_holdings,
-                       std::shared_ptr<ProjectionStrategy> strategy);
+                       std::shared_ptr<Strategy> strategy);
 
 private:
     static double get_stock_price(const StockData& stock, const std::string& date);
@@ -25,7 +25,7 @@ private:
     rank_stocks(const std::vector<StockData>& stock_data,
                 const std::string& date,
                 int period,
-                std::shared_ptr<ProjectionStrategy> strategy);
+                std::shared_ptr<Strategy> strategy);
 };
 
 }  // namespace stock_analyzer

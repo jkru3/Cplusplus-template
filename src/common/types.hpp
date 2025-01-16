@@ -22,14 +22,14 @@ struct StockData {
     std::map<std::string, StockPrice> daily_prices;
 };
 
-struct ProjectionResult {
+struct SpeculationResult {
     std::string ticker;
     double projected_change;
     double actual_change;
     double accuracy;
 };
 
-struct ProjectionSummary {
+struct SpeculationSummary {
     double total_projected_change;
     double total_actual_change;
     double total_accuracy;

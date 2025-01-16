@@ -2,9 +2,12 @@
 #include "data_processing/csv_parser.hpp"
 #include "data_processing/json_parser.hpp"
 #include "calculations/lookup.hpp"
-#include "calculations/projection.hpp"
-#include "calculations/eval.hpp"
+#include "calculations/speculation.hpp"
+#include "calculations/format.hpp"
 #include "calculations/strategies.hpp"
+#include "calculations/rebalance.hpp"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <iostream>
 #include <memory>
 #include <chrono>
@@ -22,8 +25,11 @@ std::string get_current_date() {
 }
 
 int main(int argc, char* argv[]) {
+    auto console = spdlog::stdout_color_mt("console");
+    spdlog::set_level(spdlog::level::debug);
+
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " [lookup|project] <csv_file> [date] [period] [strategy]\n";
+        std::cerr << "Usage: " << argv[0] << " [lookup|project|rebalance] <csv_file> [date] [period] [strategy]\n";
         return 1;
     }
 
@@ -32,6 +38,15 @@ int main(int argc, char* argv[]) {
     std::string date = argc > 3 ? argv[3] : get_current_date();
 
     try {
+        if (!std::filesystem::exists(csv_file)) {
+            throw std::runtime_error("File does not exist: " + csv_file);
+        }
+
+        // Also check if we have read permissions
+        if (!std::filesystem::is_regular_file(csv_file)) {
+            throw std::runtime_error("Path is not a regular file: " + csv_file);
+        }
+
         auto stock_data = CSVParser::parse_stock_data(csv_file);
 
         if (command == "lookup") {
@@ -40,7 +55,7 @@ int main(int argc, char* argv[]) {
             std::cout << "--------------------------------------------------------------------------------\n";
             auto results = StockLookup::lookup_stocks(stock_data, date);
             for (const auto& stock : results) {
-                std::cout << StockEval::format_lookup_result(stock, date) << std::endl;
+                std::cout << Format::format_lookup_result(stock, date) << std::endl;
             }
             std::cout << "\n";
         }
@@ -48,14 +63,14 @@ int main(int argc, char* argv[]) {
             int period = argc > 4 ? std::stoi(argv[4]) : 7;
             std::string strategy_name = argc > 5 ? argv[5] : "default";
 
-            std::shared_ptr<ProjectionStrategy> strategy;
+            std::shared_ptr<Strategy> strategy;
             if (strategy_name == "random") {
                 strategy = std::make_shared<RandomStrategy>();
             } else {
                 strategy = std::make_shared<DefaultStrategy>();
             }
 
-            auto [results, summary] = StockProjection::project_stocks(stock_data, date, period, strategy);
+            auto [results, summary] = Speculation::project_stocks(stock_data, date, period, strategy);
             
             // Determine if we should include actual results
             bool include_actual = false;
@@ -70,11 +85,11 @@ int main(int argc, char* argv[]) {
 
             // Print results
             std::cout << "\nSpeculation for " << date << " " << period << " trading days ahead using " << strategy_name << " strategy:\n";
-            std::cout << StockEval::format_projection_header(include_actual);
+            std::cout << Format::format_projection_header(include_actual);
             for (const auto& result : results) {
-                std::cout << StockEval::format_projection_result(result, include_actual) << std::endl;
+                std::cout << Format::format_projection_result(result, include_actual) << std::endl;
             }
-            std::cout << "Total: | " << StockEval::format_projection_summary(summary, include_actual) << std::endl;
+            std::cout << "Total: | " << Format::format_projection_summary(summary, include_actual) << std::endl;
             std::cout << "\n";
         } else if (command == "rebalance" && argc > 3) {
             // Parse portfolio file
@@ -85,7 +100,7 @@ int main(int argc, char* argv[]) {
             int max_holdings = argc > 5 ? std::stoi(argv[5]) : 3;
             std::string strategy_name = argc > 6 ? argv[6] : "default";
             
-            std::shared_ptr<ProjectionStrategy> strategy;
+            std::shared_ptr<Strategy> strategy;
             if (strategy_name == "random") {
                 strategy = std::make_shared<RandomStrategy>();
             } else {
@@ -108,7 +123,7 @@ int main(int argc, char* argv[]) {
             
             // Print results
             for (const auto& action : actions) {
-                std::cout << StockEval::format_rebalance_action(action, include_actual) << std::endl;
+                std::cout << Format::format_rebalance_action(action, include_actual) << std::endl;
             }
         } else {
             std::cerr << "Unknown command: " << command << std::endl;

@@ -5,20 +5,20 @@
 
 namespace stock_analyzer {
 
-class ProjectionStrategy {
+class Strategy {
 public:
-    virtual ~ProjectionStrategy() = default;
+    virtual ~Strategy() = default;
     virtual double project_change(const StockData& data, const std::string& start_date, int period) = 0;
 };
 
-class DefaultStrategy : public ProjectionStrategy {
+class DefaultStrategy : public Strategy {
 public:
     double project_change(const StockData& data, const std::string& start_date, int period) override;
 private:
     std::string get_date_before(const std::map<std::string, StockPrice>& prices, const std::string& date, int days);
 };
 
-class RandomStrategy : public ProjectionStrategy {
+class RandomStrategy : public Strategy {
 public:
     double project_change(const StockData& data, const std::string& start_date, int period) override;
 };

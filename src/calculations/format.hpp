@@ -1,17 +1,17 @@
-// src/calculations/eval.hpp
+// src/calculations/format.hpp
 #pragma once
 #include "common/types.hpp"
 #include <string>
 
 namespace stock_analyzer {
 
-class StockEval {
+class Format {
 public:
     static std::string format_lookup_result(const StockData& stock, const std::string& date);
 
     static std::string format_projection_header(bool include_actual = true);
-    static std::string format_projection_summary(const ProjectionSummary& summary, bool include_actual = true);
-    static std::string format_projection_result(const ProjectionResult& result, bool include_actual = true);
+    static std::string format_projection_summary(const SpeculationSummary& summary, bool include_actual = true);
+    static std::string format_projection_result(const SpeculationResult& result, bool include_actual = true);
     
     static std::string format_rebalance_action(const RebalanceAction& action, bool include_actual = true);
 };

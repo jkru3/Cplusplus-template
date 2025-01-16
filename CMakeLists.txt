@@ -18,7 +18,8 @@ project(stock_analyzer VERSION 1.0)
 # Specify C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_BUILD_TYPE Debug)
 
 # Find required packages
 find_package(nlohmann_json CONFIG REQUIRED)  # For JSON processing
@@ -32,9 +33,9 @@ set(SOURCES
     src/common/types.cpp
     src/data_processing/csv_parser.cpp
     src/data_processing/json_parser.cpp
-    src/calculations/eval.cpp
+    src/calculations/format.cpp
     src/calculations/lookup.cpp
-    src/calculations/projection.cpp
+    src/calculations/speculation.cpp
     src/calculations/rebalance.cpp
     src/calculations/strategies.cpp
 )

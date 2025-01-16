@@ -8,7 +8,7 @@ PortfolioRebalancer::rebalance_portfolio(const Portfolio& portfolio,
                                         const std::vector<StockData>& stock_data,
                                         int period,
                                         int max_holdings,
-                                        std::shared_ptr<ProjectionStrategy> strategy) {
+                                        std::shared_ptr<Strategy> strategy) {
     if (!strategy) {
         throw std::runtime_error("error with strategy");
     }
@@ -137,7 +137,7 @@ std::vector<std::pair<std::string, double>>
 PortfolioRebalancer::rank_stocks(const std::vector<StockData>& stock_data,
                                 const std::string& date,
                                 int period,
-                                std::shared_ptr<ProjectionStrategy> strategy) {
+                                std::shared_ptr<Strategy> strategy) {
     std::vector<std::pair<std::string, double>> rankings;
     
     for (const auto& stock : stock_data) {

@@ -1,21 +1,21 @@
 // src/calculations/projection.cpp
-#include "projection.hpp"
+#include "speculation.hpp"
 #include <stdexcept>
 #include <cmath>
 
 namespace stock_analyzer {
 
-std::pair<std::vector<ProjectionResult>, ProjectionSummary>
-StockProjection::project_stocks(const std::vector<StockData>& data,
+std::pair<std::vector<SpeculationResult>, SpeculationSummary>
+Speculation::project_stocks(const std::vector<StockData>& data,
                               const std::string& date,
                               int period,
-                              std::shared_ptr<ProjectionStrategy> strategy) {
+                              std::shared_ptr<Strategy> strategy) {
     if (!strategy) {
         throw std::runtime_error("error with strategy");
     }
 
-    std::vector<ProjectionResult> results;
-    ProjectionSummary summary = {0, 0, 0};
+    std::vector<SpeculationResult> results;
+    SpeculationSummary summary = {0, 0, 0};
     bool found_any = false;
 
     for (const auto& stock : data) {
@@ -25,7 +25,7 @@ StockProjection::project_stocks(const std::vector<StockData>& data,
         }
         found_any = true;
 
-        ProjectionResult result;
+        SpeculationResult result;
         result.ticker = stock.symbol;
 
         try {

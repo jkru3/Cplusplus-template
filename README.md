@@ -26,6 +26,13 @@ cmake ..
 cmake --build .
 ```
 
+### Debug
+```bash
+cmake -DCMAKE_BUILD_TYPE=Debug
+cmake --build .
+lldb [usage]
+```
+
 ## Usage
 
 ### Lookup stocks for a specific date

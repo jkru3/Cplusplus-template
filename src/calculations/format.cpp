@@ -1,11 +1,11 @@
-// src/calculations/eval.cpp
-#include "eval.hpp"
+// src/calculations/format.cpp
+#include "format.hpp"
 #include <sstream>
 #include <iomanip>
 
 namespace stock_analyzer {
 
-std::string StockEval::format_lookup_result(const StockData& stock, const std::string& date) {
+std::string Format::format_lookup_result(const StockData& stock, const std::string& date) {
     auto it = stock.daily_prices.find(date);
     if (it == stock.daily_prices.end()) {
         return "";
@@ -24,7 +24,7 @@ std::string StockEval::format_lookup_result(const StockData& stock, const std::s
     return ss.str();
 }
 
-std::string StockEval::format_projection_header(bool include_actual) {
+std::string Format::format_projection_header(bool include_actual) {
     std::stringstream ss;
     ss << std::left << "Ticker" << " | "
        << " Proj % | ";
@@ -38,7 +38,7 @@ std::string StockEval::format_projection_header(bool include_actual) {
     return ss.str();
 }
 
-std::string StockEval::format_projection_result(const ProjectionResult& result, bool include_actual) {
+std::string Format::format_projection_result(const SpeculationResult& result, bool include_actual) {
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2);
     ss << std::setw(6) << result.ticker << " | "
@@ -52,7 +52,7 @@ std::string StockEval::format_projection_result(const ProjectionResult& result, 
     return ss.str();
 }
 
-std::string StockEval::format_projection_summary(const ProjectionSummary& summary, bool include_actual) {
+std::string Format::format_projection_summary(const SpeculationSummary& summary, bool include_actual) {
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2);
     ss << std::setw(6) << summary.total_projected_change << "% | ";
@@ -65,7 +65,7 @@ std::string StockEval::format_projection_summary(const ProjectionSummary& summar
     return ss.str();
 };
 
-std::string StockEval::format_rebalance_action(const RebalanceAction& action, bool include_actual) {
+std::string Format::format_rebalance_action(const RebalanceAction& action, bool include_actual) {
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2);
     

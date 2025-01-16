@@ -1,9 +1,10 @@
 // src/data_processing/csv_parser.cpp
-#include "data_processing/csv_parser.hpp"
+#include "csv_parser.hpp"
 #include <fstream>
 #include <sstream>
 #include <map>
 #include <spdlog/spdlog.h>
+#include <iostream>
 
 namespace stock_analyzer {
 
@@ -21,6 +22,8 @@ std::vector<std::string> CSVParser::split(const std::string& str, char delimiter
 }
 
 std::vector<StockData> CSVParser::parse_stock_data(const std::string& filename) {
+    // Before opening the file
+
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file: " + filename);
