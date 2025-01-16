@@ -1,4 +1,4 @@
-// src/calculations/projection.hpp
+// src/calculations/speculation.hpp
 #pragma once
 #include "common/types.hpp"
 #include "strategies.hpp"

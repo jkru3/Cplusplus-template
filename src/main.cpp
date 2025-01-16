@@ -24,6 +24,20 @@ std::string get_current_date() {
     return std::string(buffer);
 }
 
+// Helper function to safely check if we have enough future data points
+bool has_enough_future_data(const std::map<std::string, StockPrice>::const_iterator& start_it,
+                          const std::map<std::string, StockPrice>& prices,
+                          int period) {
+    auto temp_it = start_it;
+    for (int i = 0; i < period; ++i) {
+        if (std::next(temp_it) == prices.end()) {
+            return false;
+        }
+        temp_it = std::next(temp_it);
+    }
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     auto console = spdlog::stdout_color_mt("console");
     spdlog::set_level(spdlog::level::debug);
@@ -42,7 +56,6 @@ int main(int argc, char* argv[]) {
             throw std::runtime_error("File does not exist: " + csv_file);
         }
 
-        // Also check if we have read permissions
         if (!std::filesystem::is_regular_file(csv_file)) {
             throw std::runtime_error("Path is not a regular file: " + csv_file);
         }
@@ -76,8 +89,7 @@ int main(int argc, char* argv[]) {
             bool include_actual = false;
             for (const auto& stock : stock_data) {
                 auto it = stock.daily_prices.find(date);
-                if (it != stock.daily_prices.end() && 
-                    std::next(it, period) != stock.daily_prices.end()) {
+                if (it != stock.daily_prices.end() && has_enough_future_data(it, stock.daily_prices, period)) {
                     include_actual = true;
                     break;
                 }
@@ -114,8 +126,7 @@ int main(int argc, char* argv[]) {
             bool include_actual = false;
             for (const auto& stock : stock_data) {
                 auto it = stock.daily_prices.find(portfolio.date);
-                if (it != stock.daily_prices.end() && 
-                    std::next(it, period) != stock.daily_prices.end()) {
+                if (it != stock.daily_prices.end() && has_enough_future_data(it, stock.daily_prices, period)) {
                     include_actual = true;
                     break;
                 }

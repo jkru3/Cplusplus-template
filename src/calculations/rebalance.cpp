@@ -70,19 +70,31 @@ PortfolioRebalancer::rebalance_portfolio(const Portfolio& portfolio,
             
             // Calculate actual performance if data available
             auto price_it = stock.daily_prices.find(portfolio.date);
-            if (price_it != stock.daily_prices.end() && 
-                std::next(price_it, period) != stock.daily_prices.end()) {
-                double end_price = std::next(price_it, period)->second.close;
-                action.actual_change = ((end_price - current_price) / current_price) * 100.0;
-                action.actual_value = -(end_price * quantity);
-                action.accuracy = 100.0 - std::abs(action.actual_change - action.projected_change);
+            if (price_it != stock.daily_prices.end()) {
+                // First check if we have enough elements ahead
+                auto temp_it = price_it;
+                bool has_enough_data = true;
+                for (int i = 0; i < period && has_enough_data; ++i) {
+                    if (std::next(temp_it) == stock.daily_prices.end()) {
+                        has_enough_data = false;
+                        break;
+                    }
+                    temp_it = std::next(temp_it);
+                }
+                
+                if (has_enough_data) {
+                    double end_price = temp_it->second.close;
+                    action.actual_change = ((end_price - current_price) / current_price) * 100.0;
+                    action.actual_value = -(end_price * quantity);
+                    action.accuracy = 100.0 - std::abs(action.actual_change - action.projected_change);
+                }
             }
             
             actions.push_back(action);
         }
     }
 
-    // Rest of the implementation remains the same
+    // Buy promising stocks
     double available_cash = portfolio.cash;
     for (const auto& ranked_stock : ranked_stocks) {
         if (actions.size() >= max_holdings) break;
@@ -108,12 +120,24 @@ PortfolioRebalancer::rebalance_portfolio(const Portfolio& portfolio,
             
             // Calculate actual performance if data available
             auto price_it = stock.daily_prices.find(portfolio.date);
-            if (price_it != stock.daily_prices.end() && 
-                std::next(price_it, period) != stock.daily_prices.end()) {
-                double end_price = std::next(price_it, period)->second.close;
-                action.actual_change = ((end_price - current_price) / current_price) * 100.0;
-                action.actual_value = end_price * quantity;
-                action.accuracy = 100.0 - std::abs(action.actual_change - action.projected_change);
+            if (price_it != stock.daily_prices.end()) {
+                // First check if we have enough elements ahead
+                auto temp_it = price_it;
+                bool has_enough_data = true;
+                for (int i = 0; i < period && has_enough_data; ++i) {
+                    if (std::next(temp_it) == stock.daily_prices.end()) {
+                        has_enough_data = false;
+                        break;
+                    }
+                    temp_it = std::next(temp_it);
+                }
+                
+                if (has_enough_data) {
+                    double end_price = temp_it->second.close;
+                    action.actual_change = ((end_price - current_price) / current_price) * 100.0;
+                    action.actual_value = end_price * quantity;
+                    action.accuracy = 100.0 - std::abs(action.actual_change - action.projected_change);
+                }
             }
             
             actions.push_back(action);

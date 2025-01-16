@@ -1,4 +1,4 @@
-// src/calculations/projection.cpp
+// src/calculations/speculation.cpp
 #include "speculation.hpp"
 #include <stdexcept>
 #include <cmath>

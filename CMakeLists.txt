@@ -30,7 +30,6 @@ find_package(CLI11 CONFIG REQUIRED)          # For command line parsing
 # Add source files
 set(SOURCES
     src/main.cpp
-    src/common/types.cpp
     src/data_processing/csv_parser.cpp
     src/data_processing/json_parser.cpp
     src/calculations/format.cpp

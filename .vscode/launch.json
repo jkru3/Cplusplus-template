@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/stock_analyzer",
             // "args": ["lookup", "../data/sample_stock_data.csv", "2020-01-02"],
-            "args": [],
+            "args": ["rebalance", "../data/sample_stock_data.csv", "../data/portfolio.json", "5", "3", "random"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
             "environment": [
@@ -30,9 +30,9 @@
                 "${workspaceFolder}": "${workspaceFolder}"
             },
             "logging": {
-                "trace": false,
-                "traceResponse": false,
-                "engineLogging": false
+                "trace": true,
+                "traceResponse": true,
+                "engineLogging": true
             }
         }
     ]
