@@ -4,12 +4,12 @@
 #include <iomanip>
 
 int main() {
-    // Configure rebalancing parameters
-    const int lookback_period = 50;
-    const int holding_window = 10;
-    const int max_holdings = 50;
-    const int max_sector_lead = 5;
-    const double adjust_by = 1.0;
+    // CUSTOMIZE THESE THESE
+    const int lookback_period = 50; // this is the period of historical data (in trading days) we look backwards
+    const int holding_window = 10; // this is the number of trading days ahead we are speculating on
+    const int max_holdings = 50; // this is the maximum number of stocks we are allowed to buy in a rebalance
+    const int max_sector_lead = 5; // the max allowed difference between the most and least represesnted sector in our portfolio
+    const double adjust_by = 1.0; // as we get from 0 to 1, we perscribe more and more adjustment to our portfolio
 
     auto speculation_strategy = std::make_unique<MovingAverageStrategy>(
         std::min(lookback_period, 20),
