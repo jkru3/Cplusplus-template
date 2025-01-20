@@ -1,15 +1,6 @@
 {
   "id": "test-1",
-  "date": "2020-01-08",
-  "cash": 5000,
-  "holdings": [
-    {
-      "ticker": "AAPL",
-      "quantity": 10
-    },
-    {
-      "ticker": "WMT",
-      "quantity": 20
-    }
-  ]
+  "date": "2024-04-01",
+  "cash": 10000,
+  "holdings": []
 }

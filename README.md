@@ -34,23 +34,10 @@ lldb [usage]
 ```
 
 ## Usage
-
-### Lookup stocks for a specific date
 ```bash
-./stock_analyzer lookup ../data/sample_stock_data.csv 2020-01-02
+./stock_analyzer
 ```
 
-### Project stocks with custom parameters
-```bash
-./stock_analyzer project ../data/sample_stock_data.csv 2020-01-02 7 random
-```
-
-### Rebalance
-```bash
-./stock_analyzer rebalance ../data/sample_stock_data.csv ../data/portfolio.json 5 3 random
-```
-
-### Need help?
-```bash
-./stock_analyzer --help
-```
+# TODO:
+- We need future stock prediction
+- test writing to portfolios
